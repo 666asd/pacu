@@ -2,6 +2,7 @@ import datetime
 import json
 import copy
 
+
 from sqlalchemy import (
     Boolean, CheckConstraint, Column, DateTime, ForeignKey, inspect, Integer, Text
 )
@@ -21,7 +22,8 @@ class AWSKey(Base, ModelUpdateMixin):
     session_id = Column(Integer, ForeignKey('pacu_session.id', ondelete='CASCADE'))
 
     user_name = Column(Text)
-    user_arn = Column(Text)
+    role_name = Column(Text)
+    arn = Column(Text)
     account_id = Column(Text)
     user_id = Column(Text)
     roles = Column(JSONType)
@@ -42,7 +44,8 @@ class AWSKey(Base, ModelUpdateMixin):
         # Deep copy because Permissions->allow_permissions and deny_permissions were dicts that were being passed as reference
         return copy.deepcopy({
             'UserName': self.user_name,
-            'UserArn': self.user_arn,
+            'RoleName': self.role_name,
+            'Arn': self.arn,
             'AccountId': self.account_id,
             'UserId': self.user_id,
             'Roles': self.roles,
@@ -60,40 +63,6 @@ class AWSKey(Base, ModelUpdateMixin):
         })
 
 
-class ProxySettings(Base, ModelUpdateMixin):
-    __tablename__ = 'proxy_settings'
-
-    id = Column(Integer, primary_key=True)
-
-    ip = Column(Text, nullable=True, default='0.0.0.0')
-    target_agent = Column(JSONType, nullable=False, default=[])
-    port = Column(Integer, nullable=False, default=80)
-    listening = Column(Boolean, nullable=False, default=False)
-    ssh_username = Column(Text, nullable=True, default='')
-    ssh_password = Column(Text, nullable=True, default='')
-    ssh_shm_name = Column(Text, nullable=True, default='')
-
-    @classmethod
-    def get_proxy_settings(cls, database):
-        return database.query(ProxySettings).scalar()
-
-    def activate(self, database):
-        database.add(self)
-        database.commit()
-
-    # How to add a positive-integer-only constraint to a column in SQLAlchemy.
-    __table_args__ = (
-        CheckConstraint(
-            'port > 0',
-            name='check_port_is_positive'
-        ),
-        {}
-    )
-
-    def __repr__(self):
-        return '<PacuProxy {}:{} Target {} Listening {}>'.format(self.ip, self.port, self.target_agent, self.listening)
-
-
 class PacuSession(Base, ModelUpdateMixin):
     __tablename__ = 'pacu_session'
     aws_data_field_names = (
@@ -105,6 +74,7 @@ class PacuSession(Base, ModelUpdateMixin):
         'DataPipeline',
         'DynamoDB',
         'EC2',
+        'ECS',
         'Glue',
         'GuardDuty',
         'IAM',
@@ -112,7 +82,9 @@ class PacuSession(Base, ModelUpdateMixin):
         'Lambda',
         'Lightsail',
         'S3',
+        'SecretsManager',
         'Shield',
+        'SSM',
         'VPC',
         'WAF',
         'Account',
@@ -140,6 +112,7 @@ class PacuSession(Base, ModelUpdateMixin):
     DataPipeline = Column(JSONType, nullable=False, default=dict)
     DynamoDB = Column(JSONType, nullable=False, default=dict)
     EC2 = Column(JSONType, nullable=False, default=dict)
+    ECS = Column(JSONType, nullable=False, default=dict)
     Glue = Column(JSONType, nullable=False, default=dict)
     GuardDuty = Column(JSONType, nullable=False, default=dict)
     IAM = Column(JSONType, nullable=False, default=dict)
@@ -147,6 +120,8 @@ class PacuSession(Base, ModelUpdateMixin):
     Lambda = Column(JSONType, nullable=False, default=dict)
     Lightsail = Column(JSONType, nullable=False, default=dict)
     S3 = Column(JSONType, nullable=False, default=dict)
+    SecretsManager = Column(JSONType, nullable=False, default=dict)
+    SSM = Column(JSONType, nullable=False, default=dict)
     Shield = Column(JSONType, nullable=False, default=dict)
     VPC = Column(JSONType, nullable=False, default=dict)
     WAF = Column(JSONType, nullable=False, default=dict)
@@ -229,3 +204,6 @@ class PacuSession(Base, ModelUpdateMixin):
                     all_data[attribute.key] = attribute.value
 
         return remove_empty_from_dict(all_data)
+
+    
+   

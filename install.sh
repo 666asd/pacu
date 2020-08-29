@@ -1,16 +1,17 @@
 #!/bin/bash
 
+
 check_python_version() {
     echo "[ + ] Checking Python version . . ."
     echo "[ $ ] python3 --version"
 
     MINIMUM_VERSION="3.5"
-    PYTHON_VERSION=$(python3 --version)
+    PYTHON_VERSION=$(python3 --version 2>&1)
 
     echo "$PYTHON_VERSION"
 
-    # This ensures the Python version is 3.6 or higher. https://regex101.com/
-    VERSION_REGEX="Python\ ((3\.[^0-4])|(3\.[1-9][0-9]+)|([4-9]+\.\d+))"
+    # This ensures the Python version is 3.5 or higher. https://regex101.com/
+    VERSION_REGEX="^Python\ ((3\.[^0-4])|(3\.[1-9][0-9]+)|([4-9]+\.\d+))(.*)$"
 
     if [[ $PYTHON_VERSION =~ $VERSION_REGEX ]]; then
         echo "[ + ] Your Python version is compatible with Pacu."

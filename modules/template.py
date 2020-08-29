@@ -59,9 +59,6 @@ parser.add_argument('', required=False, default=None, help='')
 def main(args, pacu_main):
     session = pacu_main.get_active_session()
 
-    # For if you need information from the PacuProxy listener or agents
-    proxy_settings = pacu_main.get_proxy_settings()
-
     ###### These can be removed if you are not using the function.
     args = parser.parse_args(args)
     print = pacu_main.print
@@ -89,7 +86,7 @@ def main(args, pacu_main):
     # This check will be false if the user declines to run the pre-requisite
     # module or it fails. Depending on the module, you may still want to
     # continue execution, so building the check is on you as a developer.
-    if fetch_data(['EC2', 'SecurityGroups'], 'enum_ec2_sec_groups', '') is False:
+    if fetch_data(['EC2', 'SecurityGroups'], 'ec2__enum', '--security-groups') is False:
         print('Pre-req module not run successfully. Exiting...')
         return
 
@@ -100,10 +97,6 @@ def main(args, pacu_main):
     if not install_dependencies(module_info['external_dependencies']):
         return
 
-    # IMPORTANT NOTE: It is suggested to always utilize the DryRun parameter
-    # for boto3 requests that support it. It will test the permissions of the
-    # action without actually executing it.
-
     # Use the get_regions function to fetch an array of supported regions for
     # the service that you pass into it.
     regions = get_regions('EC2')
@@ -113,7 +106,6 @@ def main(args, pacu_main):
         client = pacu_main.get_boto3_client('aws_service', region)
         data = client.do_something()
 
-    print('{} completed.\n'.format(module_info['name']))
     # Make sure your main function returns whatever data you need to construct
     # a module summary string.
     return data
